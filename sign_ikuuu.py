@@ -15,6 +15,18 @@ USER_AGENT = (
     'Chrome/120.0.0.0 Safari/537.36'
 )
 
+def send_webhook(content, webhook_url):
+    if not webhook_url:
+        return
+    try:
+        resp = requests.post(
+            webhook_url,
+            json={"msgtype": "text", "text": {"content": content}},
+            timeout=9,
+        ).json()
+        print(f"[群机器人通知] {resp}")
+    except Exception as e:
+        print(f"[群机器人通知失败] {e}")
 
 # ─────────────────────────────
 # 邮箱脱敏
@@ -240,13 +252,10 @@ def handler(event=None, context=None):
         print('\n最终结果：')
         print(final_msg)
 
-        # 企业微信通知
-        send_wx(
-            f"[ikuuu] 多账号签到结果：\n{final_msg}",
-            corpid,
-            corpsecret,
-            agentid
-        )
+        # 消息通知
+        notify_msg = f"[ikuuu] 多账号签到结果：\n{final_msg}"
+        send_wx(notify_msg, corpid, corpsecret, agentid)
+        send_webhook(notify_msg, os.environ.get('WX_WEBHOOK') or '')
 
     except Exception as e:
 
@@ -254,12 +263,9 @@ def handler(event=None, context=None):
 
         print(content)
 
-        send_wx(
-            f"[ikuuu] 签到结果：{content}",
-            corpid,
-            corpsecret,
-            agentid
-        )
+        notify_msg = f"[ikuuu] 签到结果：{content}"
+        send_wx(notify_msg, corpid, corpsecret, agentid)
+        send_webhook(notify_msg, os.environ.get('WX_WEBHOOK') or '')
 
     return '任务完成'
 
